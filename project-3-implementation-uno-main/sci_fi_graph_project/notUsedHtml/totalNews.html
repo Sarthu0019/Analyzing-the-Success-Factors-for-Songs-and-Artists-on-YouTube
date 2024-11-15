@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celebrity News Counts</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+
+</head>
+<body>
+
+    
+    <div class="navbar">
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('news') }}">NEWS DATA</a>
+        <a href="{{ url_for('redditComments') }}">REDDIT: Comments vs Posts</a>
+        <a href="{{ url_for('youTube') }}">YOUTUBE View</a>
+        <a href="{{ url_for('youTubeLikeViews') }}">YOUTUBE Views VS Likes</a>
+    </div>
+
+    <h1>NEWS Graph</h1>
+    <h2>(Total Count): {{ totalNewsCount }}</h2>
+
+    <div id="chartdiv" class="chartdiv"></div>
+
+    <form action="{{ url_for('news') }}" method="post" style="text-align: center; margin-top: 20px;">
+        <label for="startDate">Start Date: </label>
+        <select id="startDate" name="startDate">
+            {% for label in labels %}
+                <option value="{{ label }}" {% if label == startDate %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="endDate">End Date: </label>
+        <select id="endDate" name="endDate">
+            {% for label in labels %}
+                <option value="{{ label }}" {% if label == endDate %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        
+        <button>Update Chart</button>
+    </form>
+
+    <h1>Word Cloud</h1>
+    <div class="wordCloudFrame">
+        <img class="wordCloudImage" src="data:image/png;base64,{{ wordcloud_image }}" alt="Word Cloud">
+    </div>
+
+    <h1># TO ADD FILTERED VIEW OF ALL NEWS ARTICLES</h1>
+
+
+    <script>
+        am4core.useTheme(am4themes_animated);
+    
+        var chart = am4core.create("chartdiv", am4charts.XYChart);
+    
+        chart.data = [
+            {% for entry in celebCountDict %}
+                {{ entry | tojson }},
+            {% endfor %}
+        ];
+    
+        var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+        dateAxis.renderer.grid.template.location = 0;
+        dateAxis.renderer.minGridDistance = 30;
+    
+        var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+    
+        var firstEntry = chart.data[0];
+        for (var celeb in firstEntry) {
+            if (celeb !== 'date') {
+                createSeries(celeb, capitalizeWords(celeb));
+            }
+        }
+    
+        chart.legend = new am4charts.Legend();
+    
+        function createSeries(field, name) {
+            var series = chart.series.push(new am4charts.LineSeries());
+            series.dataFields.valueY = field;
+            series.dataFields.dateX = "date";
+            series.name = name;
+            series.tooltipText = "{dateX}: [b]{valueY}[/]";
+            series.strokeWidth = 2;
+    
+            series.adapter.add("tooltipText", function (text) {
+                var text = "[bold]{dateX}[/]\n";
+                chart.series.each(function (item) {
+                    if (!item.isHidden) {
+                        text += "[" + item.stroke.hex + "]●[/] " + item.name + ": {" + item.dataFields.valueY + "}\n";
+                    }
+                });
+                return text;
+            });
+    
+            series.tooltip.getFillFromObject = false;
+            series.tooltip.background.fill = am4core.color("#fff");
+            series.tooltip.label.fill = am4core.color("#00");
+            series.tooltip.defaultState.transitionDuration = 0;
+            series.tooltip.hiddenState.transitionDuration = 0;
+            var bullet = series.bullets.push(new am4charts.CircleBullet());
+            bullet.circle.stroke = am4core.color("#fff");
+            bullet.circle.strokeWidth = 2;
+    
+            return series;
+        }
+    
+        function capitalizeWords(str) {
+            return str.replace(/\b\w/g, function (match) {
+                return match.toUpperCase();
+            });
+        }
+
+        function getIndex(targetDate) {
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].date === targetDate) {
+                    return i;
+                }
+            }
+            return -1; 
+        }
+
+    </script>
+
+    <div class="end"></>
+</body>
+</html>

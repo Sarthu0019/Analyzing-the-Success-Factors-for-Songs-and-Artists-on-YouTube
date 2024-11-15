@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Hate Speech Comments</title>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="{{ url_for('index') }}" class="headerText">Team <span class="teamName">UNO</span></a>
+        <div class="navTabs">
+            <a href="{{ url_for('news') }}">NEWS: News Posts</a>
+            <a href="{{ url_for('redditComments') }}">REDDIT: Comments vs Posts</a>
+            <a href="{{ url_for('youTube') }}">YOUTUBE: Views</a>
+            <a href="{{ url_for('youTubeReddit') }}">YOUTUBE: REDDIT</a>
+            <a href="{{ url_for('youTubeLikeViews') }}">YOUTUBE: Views VS Likes</a>
+            <a href="{{ url_for('redditHateSpeech') }}">REDDIT: Hate</a>
+        </div>
+    </div>
+
+    <h1>REDDIT: Comments Hate Speech Count over Dates</h1>
+    <div id="chartdiv" class="chartdiv"></div>
+
+
+    <script>
+
+        am4core.useTheme(am4themes_animated);
+
+        var data = {{ data.to_dict(orient='records') | tojson | safe }};
+
+        var chart = am4core.create("chartdiv", am4charts.XYChart);
+        chart.data = data;
+
+        var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+        dateAxis.dataFields.category = "date";
+        dateAxis.renderer.minGridDistance = 50;
+
+        // Left Y-axis (View Count)
+        var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis.title.text = "Comment Count";
+
+        var viewCountSeries = chart.series.push(new am4charts.LineSeries());
+        viewCountSeries.dataFields.dateX = "date";
+        viewCountSeries.dataFields.valueY = "count";
+        viewCountSeries.name = "Comment Count";
+        viewCountSeries.strokeWidth = 2;
+
+        // Right Y-axis (Like Count)
+        var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis2.title.text = "Hate Comment Count";
+        valueAxis2.renderer.opposite = true;
+
+        var likeCountSeries = chart.series.push(new am4charts.LineSeries());
+        likeCountSeries.dataFields.dateX = "date";
+        likeCountSeries.dataFields.valueY = "totalHate";
+        likeCountSeries.name = "Hate Comment Count";
+        likeCountSeries.strokeWidth = 2;
+        likeCountSeries.yAxis = valueAxis2;
+
+        var bullet = viewCountSeries.bullets.push(new am4charts.CircleBullet());
+        bullet.circle.stroke = am4core.color("#fff");
+        bullet.circle.strokeWidth = 2;
+
+        var bullet1 = likeCountSeries.bullets.push(new am4charts.CircleBullet());
+        bullet1.circle.stroke = am4core.color("#fff");
+        bullet1.circle.strokeWidth = 2;
+
+        // Create legend
+        chart.legend = new am4charts.Legend();
+
+        chart.scrollbarX = new am4core.Scrollbar();
+
+    </script>
+
+    <div class="end"></>
+</body>
+</html>

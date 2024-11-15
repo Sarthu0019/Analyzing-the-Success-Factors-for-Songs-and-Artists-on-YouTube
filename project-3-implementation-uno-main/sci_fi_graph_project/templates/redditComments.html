@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Comments & Likes</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="{{ url_for('index') }}" class="headerText">Team <span class="teamName">UNO</span></a>
+        <div class="navTabs">
+            <a href="{{ url_for('news') }}">NEWS: News Posts</a>
+            <a href="{{ url_for('redditComments') }}">REDDIT: Comments vs Posts</a>
+            <a href="{{ url_for('youTube') }}">YOUTUBE: Views</a>
+            <a href="{{ url_for('youTubeReddit') }}">YOUTUBE: REDDIT</a>
+            <a href="{{ url_for('youTubeLikeViews') }}">YOUTUBE: Views VS Likes</a>
+            <a href="{{ url_for('redditHateSpeech') }}">REDDIT: Hate</a>
+        </div>
+    </div>
+
+    <h1>REDDIT: Comments VS Posts over Dates</h1>
+    <h2>{{ currentSelebName.upper() }}</h2>
+
+    <div id="commentAndPostGraph" class="commentAndPostGraph chartdiv"></div>
+
+    <form action="{{ url_for('redditComments') }}" method="post" style="text-align: center; margin-top: 20px;">
+
+
+        <div class="mainBar">
+            <div class="selectionBar">
+                <label for="startDate" class="label">Start Date:</label>
+                <select id="startDate" name="startDate">
+                    {% for allDate in allDates %}
+                    <option value="{{ allDate }}" {% if allDate == startDate %}selected{% endif %}>{{ allDate }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="selectionBar">
+                <label for="endDate" class="label">End Date:</label>
+                <select id="endDate" name="endDate">
+                    {% for allDate in allDates %}
+                    <option value="{{ allDate }}" {% if allDate == endDate %}selected{% endif %}>{{ allDate }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="selectionBar">
+                <label for="celebName" class="label">Select Celeb:</label>
+                <select id="celebName" name="celebName">
+                    {% for allCelebName in allCelebNames %}
+                        <option value="{{ allCelebName }}" {% if allCelebName == currentSelebName %}selected{% endif %}>{{ allCelebName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="button">
+            <button>Update Chart</button>
+        </div>
+    </form>
+
+    <h1>Word Cloud</h1>
+    <div class="wordCloudFrame">
+        <img class="wordCloudImage" src="data:image/png;base64,{{ wordcloud_image0 }}" alt="Word Cloud">
+    </div>
+
+    <div id="subscriberGraph" class="subscriberGraph chartdiv"></div>
+
+
+    <h1># TO ADD FILTERED VIEW OF ALL NEWS ARTICLES</h1>
+
+    <script>
+        
+        function get_total_posts(targetDate, postsData) {
+            for (var i = 0; i < postsData.length; i++) {
+                if (postsData[i].date.getTime() === targetDate.getTime()) {
+                    return postsData[i].totalPosts;
+                }
+            }
+            return 0;
+        }
+
+        am4core.useTheme(am4themes_animated);
+    
+        var chart = am4core.create("commentAndPostGraph", am4charts.XYChart);
+    
+        var mergedData = [
+            {% for entry in mergedRecords %}
+                { "date": new Date("{{ entry.date }}"), "totalComments": {{ entry.totalComments }}, "totalPosts": {{ entry.totalPosts }} },
+            {% endfor %}
+        ];
+
+        chart.data = mergedData;
+    
+        var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+        dateAxis.renderer.grid.template.location = 0;
+        dateAxis.renderer.minGridDistance = 50;
+    
+        var valueAxis1 = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis1.title.text = "Total Comments";
+    
+        var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis2.title.text = "Total Posts";
+        valueAxis2.renderer.opposite = true;
+    
+        createSeries("totalComments", "Total Comments", valueAxis1);
+        createSeries("totalPosts", "Total Posts", valueAxis2);
+    
+        chart.legend = new am4charts.Legend();
+    
+        function createSeries(field, name, axis) {
+            var series = chart.series.push(new am4charts.LineSeries());
+            series.dataFields.valueY = field;
+            series.dataFields.dateX = "date";
+
+            series.yAxis = axis;
+            series.name = name;
+            series.tooltipText = "{dateX}: [b]{valueY}[/]";
+            series.strokeWidth = 2;
+    
+            series.adapter.add("tooltipText", function (text) {
+                var text = "[bold]{dateX}[/]\n";
+                chart.series.each(function (item) {
+                    if (!item.isHidden) {
+                        text += "[" + item.stroke.hex + "]●[/] " + item.name + ": {" + item.dataFields.valueY + "}\n";
+                    }
+                });
+                return text;
+            });
+    
+            series.tooltip.getFillFromObject = false;
+            series.tooltip.background.fill = am4core.color("#fff");
+            series.tooltip.label.fill = am4core.color("#00");
+            series.tooltip.defaultState.transitionDuration = 0;
+            series.tooltip.hiddenState.transitionDuration = 0;
+            var bullet = series.bullets.push(new am4charts.CircleBullet());
+            bullet.circle.stroke = am4core.color("#fff");
+            bullet.circle.strokeWidth = 2;
+
+            
+            chart.scrollbarX = new am4core.Scrollbar();
+
+            return series;
+        }
+    </script>
+
+    <script>
+        am4core.useTheme(am4themes_animated);
+  
+        var chart1 = am4core.create("subscriberGraph", am4charts.XYChart);
+        chart1.data = [];
+  
+        var dataJson = {{ dataJson | safe }};
+  
+        Object.keys(dataJson).forEach(subreddit => {
+          Object.keys(dataJson[subreddit]).forEach(date => {
+            if (!chart1.data.find(item => item.date === date)) {
+              chart1.data.push({ date: date });
+            }
+            chart1.data.find(item => item.date === date)[subreddit] = dataJson[subreddit][date];
+          });
+        });
+  
+        var dateAxis = chart1.xAxes.push(new am4charts.DateAxis());
+        dateAxis.title.text = "Date";
+        dateAxis.renderer.grid.template.location = 0;
+        dateAxis.renderer.minGridDistance = 50;
+  
+        var valueAxis = chart1.yAxes.push(new am4charts.ValueAxis());
+        valueAxis.title.text = "Subscribers Count";
+  
+        Object.keys(dataJson).forEach(subreddit => {
+          createSeries(subreddit, subreddit, valueAxis);
+        });
+  
+        chart1.legend = new am4charts.Legend();
+  
+        chart1.scrollbarX = new am4charts.XYChartScrollbar();
+        chart1.scrollbarX.series.push(series);
+  
+        chart1.cursor = new am4charts.XYCursor();
+        chart1.cursor.xAxis = dateAxis;
+  
+        function createSeries(field, name, axis) {
+          var series = chart1.series.push(new am4charts.LineSeries());
+          series.dataFields.valueY = field;
+          series.dataFields.dateX = "date";
+          series.name = name;
+          series.tooltipText = "{name}: [bold]{valueY}[/]";
+          series.strokeWidth = 2;
+          series.yAxis = axis;
+  
+          // Additional customization similar to the provided example
+          series.adapter.add("tooltipText", function (text) {
+            var text = "[bold]{dateX}[/]\n";
+            chart1.series.each(function (item) {
+              if (!item.isHidden) {
+                text += "[" + item.stroke.hex + "]●[/] " + item.name + ": {" + item.dataFields.valueY + "}\n";
+              }
+            });
+            return text;
+          });
+  
+          series.tooltip.getFillFromObject = false;
+          series.tooltip.background.fill = am4core.color("#fff");
+          series.tooltip.label.fill = am4core.color("#00");
+          series.tooltip.defaultState.transitionDuration = 0;
+          series.tooltip.hiddenState.transitionDuration = 0;
+  
+          var bullet = series.bullets.push(new am4charts.CircleBullet());
+          bullet.circle.stroke = am4core.color("#fff");
+          bullet.circle.strokeWidth = 1;
+  
+          return series;
+        }
+    </script>
+
+    <div class="end"></>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Views & Likes</title>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="{{ url_for('index') }}" class="headerText">Team <span class="teamName">UNO</span></a>
+        <div class="navTabs">
+            <a href="{{ url_for('news') }}">NEWS: News Posts</a>
+            <a href="{{ url_for('redditComments') }}">REDDIT: Comments vs Posts</a>
+            <a href="{{ url_for('youTube') }}">YOUTUBE: Views</a>
+            <a href="{{ url_for('youTubeReddit') }}">YOUTUBE: REDDIT</a>
+            <a href="{{ url_for('youTubeLikeViews') }}">YOUTUBE: Views VS Likes</a>
+            <a href="{{ url_for('redditHateSpeech') }}">REDDIT: Hate</a>
+        </div>
+    </div>
+
+    <h1>YOUTUBE: Video View and Like Count over Dates</h1>
+    <div id="chartdiv" class="chartdiv"></div>
+
+    <form action="{{ url_for('youTubeLikeViews') }}" method="post" style="text-align: center; margin-top: 20px;">
+        <div class="mainBar">
+            <div class="selectionBar">
+                <label for="channelIdSelect" class="label">Select Channel:</label>
+                <select id="channelIdSelect" name="channelIdSelect"></select>
+            </div>
+
+            <div class="selectionBar">
+                <label for="videoIdSelect" class="label">Select Video:</label>
+                <select id="videoIdSelect" name="videoIdSelect"></select>
+            </div>
+        </div>
+        <div class="button">
+            <button>Update Chart</button>
+        </div>
+    </form>
+
+
+    <script>
+
+        currentCeleb1Name = '{{ currentCeleb1Name }}';
+
+        am4core.useTheme(am4themes_animated);
+
+        var data = {{ data.to_dict(orient='records') | tojson | safe }};
+        var chart;
+
+        function updateChart() {
+            // Get selected video ID from the dropdown
+            var selectedVideoID = document.getElementById("videoIdSelect").value;
+
+            // Filter data for the selected video ID
+            var filteredData = data.filter(record => record.videoID === selectedVideoID);
+
+            // Set data
+            chart.data = filteredData;
+        }
+
+        // Create chart instance
+        chart = am4core.create("chartdiv", am4charts.XYChart);
+
+        var selectChannel = document.getElementById("channelIdSelect");
+        var channelData = {{ channelData | tojson | safe }};
+        channelData.forEach(channel => {
+            var optionChannel = document.createElement("option");
+            optionChannel.value = channel[1];
+            optionChannel.text = channel[0];
+            if (channel[1] === currentCeleb1Name) {
+                optionChannel.selected = true;
+            }
+            selectChannel.add(optionChannel);
+        });
+
+        var selectVideo = document.getElementById("videoIdSelect");
+        var videoIDs = Array.from(new Set(data.map(record => record.videoID)));
+        videoIDs.forEach(videoID => {
+            var option = document.createElement("option");
+            var videoTitle = data.find(record => record.videoID === videoID).videoTitle;
+            option.value = videoID;
+            option.text = videoTitle;
+            selectVideo.add(option);
+        });
+
+        selectVideo.addEventListener("change", function() {
+            updateChart(selectVideo.value);
+        });
+
+        updateChart(selectVideo.value)
+
+        // Date axis
+        var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+        dateAxis.dataFields.category = "date";
+        dateAxis.renderer.minGridDistance = 50;
+
+        // Left Y-axis (View Count)
+        var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis.title.text = "View Count";
+
+        var viewCountSeries = chart.series.push(new am4charts.LineSeries());
+        viewCountSeries.dataFields.dateX = "date";
+        viewCountSeries.dataFields.valueY = "viewCount";
+        viewCountSeries.name = "View Count";
+        viewCountSeries.strokeWidth = 2;
+
+        // Right Y-axis (Like Count)
+        var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis2.title.text = "Like Count";
+        valueAxis2.renderer.opposite = true;
+
+        var likeCountSeries = chart.series.push(new am4charts.LineSeries());
+        likeCountSeries.dataFields.dateX = "date";
+        likeCountSeries.dataFields.valueY = "likeCount";
+        likeCountSeries.name = "Like Count";
+        likeCountSeries.strokeWidth = 2;
+        likeCountSeries.yAxis = valueAxis2;
+
+        var bullet = viewCountSeries.bullets.push(new am4charts.CircleBullet());
+        bullet.circle.stroke = am4core.color("#fff");
+        bullet.circle.strokeWidth = 2;
+
+        var bullet1 = likeCountSeries.bullets.push(new am4charts.CircleBullet());
+        bullet1.circle.stroke = am4core.color("#fff");
+        bullet1.circle.strokeWidth = 2;
+
+        // Create legend
+        chart.legend = new am4charts.Legend();
+
+        chart.scrollbarX = new am4core.Scrollbar();
+
+    </script>
+
+    <div class="end"></>
+</body>
+</html>

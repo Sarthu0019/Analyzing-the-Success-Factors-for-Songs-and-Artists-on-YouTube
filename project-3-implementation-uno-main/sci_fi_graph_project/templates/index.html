@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <title>Main Page</title>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="{{ url_for('index') }}" class="headerText">Team <span class="teamName">UNO</span></a>
+        <div class="navTabs">
+            <a href="{{ url_for('news') }}">NEWS: News Posts</a>
+            <a href="{{ url_for('redditComments') }}">REDDIT: Comments vs Posts</a>
+            <a href="{{ url_for('youTube') }}">YOUTUBE: Views</a>
+            <a href="{{ url_for('youTubeReddit') }}">YOUTUBE: REDDIT</a>
+            <a href="{{ url_for('youTubeLikeViews') }}">YOUTUBE: Views VS Likes</a>
+            <a href="{{ url_for('redditHateSpeech') }}">REDDIT: Hate</a>
+        </div>
+    </div>
+
+    <h1>Analyzing the Success Factors for Songs and Artists on YouTube</h1>
+    <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+
+
+    <div class="mainBox">
+        <div class="box">
+            <div class="one">Name: Nainika Dighavkar</div>
+            <div class="one">Email: ndighav1@binghamton.edu</div>
+        </div>
+        
+        <div class="box">
+            <div class="one">Name: Utsav Chaudhary</div>
+            <div class="one">Email: uchaudh3@binghamton.edu</div>
+        </div>
+    </div>
+
+    <h1>Project Proposal</h1>
+    <embed src="{{ url_for('static', filename='proposal.pdf') }}" type="application/pdf" width="60%" height="800px" />
+
+    <h1>NOT A MEME</h1>
+    <img src="{{ url_for('static', filename='meme.jpg') }}" class="image" />
+
+    <div class="end"></div>
+</body>
+</html>

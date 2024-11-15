@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Views</title>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="{{ url_for('index') }}" class="headerText">Team <span class="teamName">UNO</span></a>
+        <div class="navTabs">
+            <a href="{{ url_for('news') }}">NEWS: News Posts</a>
+            <a href="{{ url_for('redditComments') }}">REDDIT: Comments vs Posts</a>
+            <a href="{{ url_for('youTube') }}">YOUTUBE: Views</a>
+            <a href="{{ url_for('youTubeReddit') }}">YOUTUBE: REDDIT</a>
+            <a href="{{ url_for('youTubeLikeViews') }}">YOUTUBE: Views VS Likes</a>
+            <a href="{{ url_for('redditHateSpeech') }}">REDDIT: Hate</a>
+        </div>
+    </div>
+
+    <h1>YOUTUBE: Video View VS REDDIT: Comments over Dates</h1>
+    <div id="chartdiv" class="chartdiv"></div>
+    
+    <form action="{{ url_for('youTubeReddit') }}" method="post" style="text-align: center; margin-top: 20px;">
+
+        <div class="mainBar">
+            <div class="selectionBar">
+                <label for="channelIdSelect" class="label">Select Channel:</label>
+                <select id="channelIdSelect" name="channelIdSelect"></select>
+            </div>
+
+            <div class="selectionBar">
+                <label for="videoIdSelect" class="label">Select Video:</label>
+                <select id="videoIdSelect" name="videoIdSelect"></select>
+            </div>
+        </div>
+        <div class="button">
+            <button>Update Chart</button>
+        </div>
+    </form>
+
+    <script>
+        am4core.useTheme(am4themes_animated);
+
+        currentCeleb1Name = '{{ currentCeleb1Name }}';
+
+        var dataLeft = {{ data.to_dict(orient='records') | tojson | safe }};
+        var dataRight = {{ commentCount.to_dict(orient='records') | tojson | safe }};
+
+        var chart = am4core.create("chartdiv", am4charts.XYChart);
+        chart.data = dataLeft;
+
+        var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis.title.text = "View Count";
+
+        var valueAxis2 = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis2.title.text = "View Count";
+        valueAxis2.renderer.opposite = true;
+
+        var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+        dateAxis.renderer.grid.template.location = 0;
+        dateAxis.renderer.minGridDistance = 30;
+
+        var select = document.getElementById("channelIdSelect");
+        var channelData = {{ channelData | tojson | safe }};
+        channelData.forEach(channel => {
+            var option = document.createElement("option");
+            option.value = channel[1];
+            option.text = channel[0];
+            if (channel[1] === currentCeleb1Name) {
+                option.selected = true;
+            }
+            select.add(option);
+        });
+
+        var select = document.getElementById("videoIdSelect");
+        var videoIDs = Array.from(new Set(dataLeft.map(record => record.videoID)));
+        videoIDs.forEach(videoID => {
+            var option = document.createElement("option");
+            var videoTitle = dataLeft.find(record => record.videoID === videoID).videoTitle;
+            option.value = videoID;
+            option.text = videoTitle;
+            select.add(option);
+        });
+
+        function updateChart(selectedVideoID, selectedVideoID2) {
+            chart.series.clear();
+            
+            var series = chart.series.push(new am4charts.LineSeries());
+            series.dataFields.dateX = "date";
+            series.dataFields.valueY = "viewCount";
+            series.name = selectedVideoID;
+            series.tooltipText = "{name}: [bold]{valueY}[/]";
+            series.strokeWidth = 2;
+
+            var series2 = chart.series.push(new am4charts.LineSeries());
+            series2.dataFields.dateX = "date";
+            series2.dataFields.valueY = "count";
+            series2.name = selectedVideoID2;
+            series2.tooltipText = "{name}: [bold]{valueY}[/]";
+            series2.strokeWidth = 2;
+            series2.yAxis = valueAxis2;
+
+            series.data = dataLeft.filter(record => record.videoID === selectedVideoID);
+
+            // series2.data = dataRight.filter(record => record.videoID === selectedVideoID2);
+            series2.data = dataRight;
+            series.tooltip.getFillFromObject = false;
+            series.tooltip.background.fill = am4core.color("#fff");
+            series.tooltip.label.fill = am4core.color("#00");
+            series.tooltip.defaultState.transitionDuration = 0;
+            series.tooltip.hiddenState.transitionDuration = 0;
+
+            series2.tooltip.getFillFromObject = false;
+            series2.tooltip.background.fill = am4core.color("#fff");
+            series2.tooltip.label.fill = am4core.color("#00");
+            series2.tooltip.defaultState.transitionDuration = 0;
+            series2.tooltip.hiddenState.transitionDuration = 0;
+
+            var bullet = series.bullets.push(new am4charts.CircleBullet());
+            bullet.circle.stroke = am4core.color("#fff");
+            bullet.circle.strokeWidth = 2;
+
+            var bullet2 = series2.bullets.push(new am4charts.CircleBullet());
+            bullet2.circle.stroke = am4core.color("#fff");
+            bullet2.circle.strokeWidth = 2;
+
+            chart.scrollbarX = new am4core.Scrollbar();
+            chart.scrollbarY = new am4core.Scrollbar();
+
+            
+            chart.tooltip.label.wrap = true;
+
+            chart.legend = new am4charts.Legend();
+        }
+
+        updateChart(select.value);
+
+        select.addEventListener("change", function() {
+            updateChart(select.value);
+        });
+
+    </script>
+    
+    
+    <div class="end"></>
+</body>
+</html>
