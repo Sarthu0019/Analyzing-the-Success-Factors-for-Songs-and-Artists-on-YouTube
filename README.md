@@ -1,5 +1,5 @@
 # Project Title: Analyzing the Success Factors for Songs and Artists on YouTube
-## Authors: Utsav Chaudhary & Nainika Dighavkar
+
 ## Project Description
 This project involves analyzing the success factors for songs and artists on YouTube, with a particular focus on the impact of hate speech and online community interactions. The analysis encompasses various aspects, including hate speech patterns, correlations between Reddit and YouTube engagement, and the influence of news coverage.
 
